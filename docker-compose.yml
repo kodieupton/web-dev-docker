@@ -1,20 +1,50 @@
 version: '3.8'
 
 services:
+    web:
+        build: ./test
+        ports:
+            - "5000:5000"
+        volumes:
+            - ./test:/code
+        environment:
+            FLASK_ENV: development
+        networks: 
+            - web-dev
+
     redis:
-        image: "redis:alpine"
-        command: redis-server --requirepass password
-        expose: 
-            - 6379
+        image: "redis:latest"
+        ports: 
+            - 6379:6379
+        volumes:
+            - ${DATA_PATH_HOST}/redis:/data
+        networks: 
+            - web-dev
 
     mysql:
         build: 
             context: ./mysql
+            args: 
+                - MYSQL_VERSION=${MYSQL_VERSION}
         expose: 
             - 3306
         environment:
-            - MYSQL_DATABASE=default
-            - MYSQL_USER=default
-            - MYSQL_PASSWORD=secret
+            - MYSQL_DATABASE=${DB_DATABASE}
+            - MYSQL_USER=${DB_USERNAME}
+            - MYSQL_PASSWORD=${DB_PASSWORD}
             - MYSQL_ROOT_PASSWORD=root
             - TZ=UTC
+        volumes:
+            - ${DATA_PATH_HOST}/mysql:/var/lib/mysql
+        networks: 
+            - web-dev
+
+volumes:
+    mysql:
+        driver: local
+    redis:
+        driver: local
+
+networks: 
+    web-dev:
+        driver: bridge
